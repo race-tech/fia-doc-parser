@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """Frequently used foreign key models for the data objects"""
+
 from typing import Self
 
 from pydantic import ConfigDict, field_validator, model_validator, BaseModel
 
 from fia_doc_parser._constant import DRIVERS, TEAMS
 
+
 class SessionValidatorMixin:
-    @field_validator('session')
+    @field_validator("session")
     @classmethod
     def clean_session(cls, session: str) -> str:
         match session.lower().strip():
@@ -36,9 +38,7 @@ class SessionValidatorMixin:
                 )
 
 
-class SessionEntryForeignKeys(
-    BaseModel, SessionValidatorMixin
-):
+class SessionEntryForeignKeys(BaseModel, SessionValidatorMixin):
     model_config = ConfigDict(extra="forbid")
 
     year: int
@@ -62,7 +62,7 @@ class RoundEntry(BaseModel):
     driver_reference: str
     team_reference: str
     round: int
-    
+
     @model_validator(mode="before")
     def get_team_reference(self) -> Self:
         if self["year"] in TEAMS:

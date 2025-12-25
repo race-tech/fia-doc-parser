@@ -7,7 +7,7 @@ from pydantic import (
     BeforeValidator,
     PositiveInt,
     NonNegativeFloat,
-    NonNegativeInt
+    NonNegativeInt,
 )
 
 from fia_doc_parser.models.foreign_key import SessionEntryForeignKeys
@@ -22,7 +22,9 @@ class SessionEntryObject(BaseModel):
     points: NonNegativeFloat | None = None
     is_eligible_for_points: bool | None = None
     grid: PositiveInt | None = None
-    time: Annotated[timedelta | None, BeforeValidator(mutate_timedelta_from_dict)] = None
+    time: Annotated[timedelta | None, BeforeValidator(mutate_timedelta_from_dict)] = (
+        None
+    )
     fastest_lap_rank: PositiveInt | None = None
     laps_completed: NonNegativeInt | None = None
     time: dict[str, str | int] | None = None

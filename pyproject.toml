@@ -34,3 +34,10 @@ addopts = '--cov fia_doc_parser'
 testpaths = [
     "tests"
 ]
+
+[tool.ruff]
+include = ["fia_doc_parser/**/*.py"]
+target-version = "py313"
+
+[tool.ruff.lint]
+ignore = ["E741"]
