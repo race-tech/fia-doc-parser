@@ -20,16 +20,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
-
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
 
       - name: Install dependencies with Poetry
         run: |
@@ -50,16 +50,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
-
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
 
       - name: Install dependencies with Poetry
         run: |
