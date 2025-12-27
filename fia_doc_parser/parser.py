@@ -1075,9 +1075,7 @@ class RaceParser(BaseParser):
         del df["temp"]
 
         df.car_no = df.car_no.astype(int)
-        df.laps_completed = df.laps_completed.astype(
-            float
-        )  # Can be empty, e.g. DSQ drivers, so
+        df.laps_completed = df.laps_completed.astype('Int64')
         df['milliseconds'] = df.time.apply(duration_to_millisecond)  # float not int
         # TODO: gap to the leader is to be cleaned later, so we can use it for cross validation
         # TODO: is the `.fillna(0)` safe? See 2024 Brazil race Hulkenberg
