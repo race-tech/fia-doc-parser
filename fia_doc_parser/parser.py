@@ -892,9 +892,21 @@ class RaceParser(BaseParser):
         assert df.shape[1] == 13, (
             f"Expected 13 cols, got {df.shape[1]} in {self.classification_file}"
         )  # noqa: PLR2004
-        df.columns.to_numpy()[0] = (
-            "position"  # zero-th col. has no name in PDF, so name it
-        )
+        df.columns = [
+            "position",
+            "NO",
+            "DRIVER",
+            "NAT",
+            "ENTRANT",
+            "LAPS",
+            "TIME",
+            "GAP",
+            "INT",
+            "KM/H",
+            "FASTEST",
+            "ON",
+            "PTS",
+        ]
 
         # Do the same for the "NOT CLASSIFIED" table. See `QualifyingParser._parse_classification`
         if has_not_classified:
