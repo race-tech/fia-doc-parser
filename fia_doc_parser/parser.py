@@ -1092,7 +1092,7 @@ class RaceParser(BaseParser):
            properly
         """
         # df.fastest_lap_time = pd.to_timedelta(df.fastest_lap_time)
-        df.fastest_lap_no = df.fastest_lap_no.astype(float)
+        df.fastest_lap_no = df.fastest_lap_no.astype('Int64')
         df["fastest_lap_rank"] = (
             df.sort_values(
                 by=["fastest_lap_time", "fastest_lap_no"], ascending=[True, True]
