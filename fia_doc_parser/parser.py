@@ -648,21 +648,20 @@ class PracticeParser(BaseParser):
         del df["NAT"]
         df = df.rename(
             columns={
-                "position": "finishing_position",
-                "NO": "car_no",
+                "NO": "driver_no",
                 "DRIVER": "driver",
                 "ENTRANT": "team",
-                "TIME": "fastest_lap_time",
-                "LAPS": "laps_completed",
+                "TIME": "fastest_lap",
+                "LAPS": "laps",
                 "GAP": "gap",
                 "INT": "int",
-                "KM/H": "avg_speed",
+                "KM/H": "fastest_lap_speed",
                 "TIME OF DAY": "fastest_lap_calender_time",
             }
         )
         df.finishing_position = df.finishing_position.astype(int)
-        df.car_no = df.car_no.astype(int)
-        df.laps_completed = df.laps_completed.astype(int)
+        df.driver_no = df.driver_no.astype(int)
+        df.laps = df.laps.astype(int)
         df.fastest_lap_time = df.fastest_lap_time.apply(duration_to_millisecond)
 
         """
@@ -1014,9 +1013,9 @@ class RaceParser(BaseParser):
             disqualified = pd.DataFrame(columns=df.columns)
 
         df["is_classified"] = True  # Set all drivers from the main table as classified
-        not_classified["finishing_status"] = 11  # TODO: should clean up the code later
+        not_classified["status_id"] = 11  # TODO: should clean up the code later
         not_classified["is_classified"] = False
-        disqualified["finishing_status"] = 20  # TODO: should clean up the code later
+        disqualified["status_id"] = 20  # TODO: should clean up the code later
         disqualified["is_classified"] = False
         df = pd.concat([df, not_classified, disqualified], ignore_index=True)
 
@@ -1024,17 +1023,16 @@ class RaceParser(BaseParser):
         del df["NAT"]
         df = df.rename(
             columns={
-                "position": "finishing_position",
-                "NO": "car_no",
+                "NO": "driver_no",
                 "DRIVER": "driver",
                 "ENTRANT": "team",
-                "LAPS": "laps_completed",
+                "LAPS": "laps",
                 "TIME": "time",  # How long it took the driver to finish the race
                 "GAP": "gap",
                 "INT": "int",
-                "KM/H": "avg_speed",
+                "KM/H": "fastest_lap_speed",
                 "FASTEST": "fastest_lap_time",
-                "ON": "fastest_lap_no",  # The lap number on which the fastest lap was set
+                "ON": "fastest_lap",  # The lap number on which the fastest lap was set
                 "PTS": "points",
             }
         )
@@ -1042,16 +1040,16 @@ class RaceParser(BaseParser):
 
         # Clean up finishing status, e.g. is lapped? Is DSQ?
         df.loc[
-            df.gap.fillna("").str.contains("LAP", regex=False), "finishing_status"
+            df.gap.fillna("").str.contains("LAP", regex=False), "status_id"
         ] = 1
         df.loc[
-            (df.finishing_position == "DNF") | (df.gap == "DNF"), "finishing_status"
+            (df.finishing_position == "DNF") | (df.gap == "DNF"), "status_id"
         ] = 11
         df.loc[
-            (df.finishing_position == "DQ") | (df.gap == "DQ"), "finishing_status"
+            (df.finishing_position == "DQ") | (df.gap == "DQ"), "status_id"
         ] = 20
         df.loc[
-            (df.finishing_position == "DNS") | (df.gap == "DNS"), "finishing_status"
+            (df.finishing_position == "DNS") | (df.gap == "DNS"), "status_id"
         ] = 30
         # TODO: clean up the coding
         # TODO: check how the PDF labels DQ? In the position col. or in the GAP col.? 2023 vs 2024
@@ -1074,8 +1072,8 @@ class RaceParser(BaseParser):
         df.finishing_position = df.temp.astype(int)
         del df["temp"]
 
-        df.car_no = df.car_no.astype(int)
-        df.laps_completed = df.laps_completed.astype('Int64')
+        df.driver_no = df.driver_no.astype(int)
+        df.laps = df.laps.astype('Int64')
         df['milliseconds'] = df.time.apply(duration_to_millisecond)  # float not int
         # TODO: gap to the leader is to be cleaned later, so we can use it for cross validation
         # TODO: is the `.fillna(0)` safe? See 2024 Brazil race Hulkenberg
@@ -1093,9 +1091,9 @@ class RaceParser(BaseParser):
         """
         # df.fastest_lap_time = pd.to_timedelta(df.fastest_lap_time)
         df.fastest_lap_no = df.fastest_lap_no.astype(float)
-        df["fastest_lap_rank"] = (
+        df["rank"] = (
             df.sort_values(
-                by=["fastest_lap_time", "fastest_lap_no"], ascending=[True, True]
+                by=["fastest_lap_time", "fastest_lap"], ascending=[True, True]
             )
             .groupby("car_no", sort=False)
             .ngroup()
@@ -1103,12 +1101,12 @@ class RaceParser(BaseParser):
         )
 
         # Fill in some default values
-        df = df.fillna({"points": 0, "finishing_status": 0})
+        df = df.fillna({"points": 0, "status_id": 0})
         df.finishing_status = df.finishing_status.astype(int)
 
         # Merge in starting grid from lap chart PDF
         if self.is_pdf_complete:
-            df = df.merge(self.starting_grid, on="car_no", how="left")
+            df = df.merge(self.starting_grid, on="driver_no", how="left")
         else:
             df["starting_grid"] = None
 
