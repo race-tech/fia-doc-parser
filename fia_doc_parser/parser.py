@@ -1104,6 +1104,7 @@ class RaceParser(BaseParser):
 
         # Fill in some default values
         df = df.fillna({"points": 0, "finishing_status": 0})
+        df.points = df.points.astype(int)
         df.finishing_status = df.finishing_status.astype(int)
 
         # Merge in starting grid from lap chart PDF
