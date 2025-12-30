@@ -1075,8 +1075,8 @@ class RaceParser(BaseParser):
         del df["temp"]
 
         df.car_no = df.car_no.astype(int)
-        df.laps_completed = df.laps_completed.astype('Int64')
-        df['milliseconds'] = df.time.apply(duration_to_millisecond)  # float not int
+        df.laps_completed = df.laps_completed.astype("Int64")
+        df["milliseconds"] = df.time.apply(duration_to_millisecond)  # float not int
         # TODO: gap to the leader is to be cleaned later, so we can use it for cross validation
         # TODO: is the `.fillna(0)` safe? See 2024 Brazil race Hulkenberg
 
@@ -1092,7 +1092,7 @@ class RaceParser(BaseParser):
            properly
         """
         # df.fastest_lap_time = pd.to_timedelta(df.fastest_lap_time)
-        df.fastest_lap_no = df.fastest_lap_no.astype('Int64')
+        df.fastest_lap_no = df.fastest_lap_no.astype("Int64")
         df["fastest_lap_rank"] = (
             df.sort_values(
                 by=["fastest_lap_time", "fastest_lap_no"], ascending=[True, True]
@@ -2118,7 +2118,23 @@ class QualifyingParser(BaseParser):
         qualifying or a sprint qualifying. This makes the code simpler, and we should always use
         `self.session` to determine what session it is.
         """
-        headers = ['position', 'car_no', 'driver', 'NAT', 'team', 'q1', 'q1_laps', '%', 'q1_time', 'q2', 'q2_laps', 'q2_time', 'q3', 'q3_laps', 'q3_time']
+        headers = [
+            "position",
+            "car_no",
+            "driver",
+            "NAT",
+            "team",
+            "q1",
+            "q1_laps",
+            "%",
+            "q1_time",
+            "q2",
+            "q2_laps",
+            "q2_time",
+            "q3",
+            "q3_laps",
+            "q3_time",
+        ]
         df.columns = headers
         df["finishing_status"] = 0
         df["original_order"] = range(
