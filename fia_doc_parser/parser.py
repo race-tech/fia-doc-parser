@@ -2121,16 +2121,7 @@ class QualifyingParser(BaseParser):
         qualifying or a sprint qualifying. This makes the code simpler, and we should always use
         `self.session` to determine what session it is.
         """
-        cols = df.columns.tolist()
-        headers = [i.replace("SQ", "Q") if i.startswith("SQ") else i for i in cols]
-        i = (
-            headers.index("Q1") + 1
-        )  # TODO: rewrite this. I myself don't understand now...
-        for q in [1, 2, 3]:
-            while i < len(headers) and headers[i] != f"Q{q + 1}":
-                if headers[i] != f"Q{q}":
-                    headers[i] = f"Q{q}_{headers[i]}"  # E.g., "TIME" --> "Q2_TIME"
-                i += 1
+        headers = ['position', 'car_no', 'driver', 'NAT', 'team', 'q1', 'q1_laps', 'q1_time', 'q2', 'q2_laps', 'q2_time', 'q3', 'q3_laps', 'q3_time']
         df.columns = headers
         df["finishing_status"] = 0
         df["original_order"] = range(
@@ -2313,7 +2304,7 @@ class QualifyingParser(BaseParser):
         del df["temp"]
 
         # Clean up
-        df.NO = df.NO.astype(int)
+        df.car_no = df.car_no.astype(int)
         del df["NAT"]
         df = df.replace("", None)
         df.position = df.position.astype(int)
