@@ -2111,9 +2111,6 @@ class QualifyingParser(BaseParser):
             hlines=hlines,
             header_included=True,
         )
-        df.columns.to_numpy()[0] = (
-            "position"  # Zero-th col. has no col. name in PDF, so name it
-        )
 
         # Clean up column name, e.g. "TIME" -> "Q2_TIME"
         """
@@ -2121,7 +2118,7 @@ class QualifyingParser(BaseParser):
         qualifying or a sprint qualifying. This makes the code simpler, and we should always use
         `self.session` to determine what session it is.
         """
-        headers = ['position', 'car_no', 'driver', 'NAT', 'team', 'q1', 'q1_laps', 'q1_time', 'q2', 'q2_laps', 'q2_time', 'q3', 'q3_laps', 'q3_time']
+        headers = ['position', 'car_no', 'driver', 'NAT', 'team', 'q1', 'q1_laps', '%', 'q1_time', 'q2', 'q2_laps', 'q2_time', 'q3', 'q3_laps', 'q3_time']
         df.columns = headers
         df["finishing_status"] = 0
         df["original_order"] = range(
@@ -2306,6 +2303,7 @@ class QualifyingParser(BaseParser):
         # Clean up
         df.car_no = df.car_no.astype(int)
         del df["NAT"]
+        del df["%"]
         df = df.replace("", None)
         df.position = df.position.astype(int)
 
