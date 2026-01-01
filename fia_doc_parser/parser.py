@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from token import COLON
 import os
 import pickle
 import re
@@ -57,6 +58,7 @@ class BaseParser:
         vlines: list[float],
         hlines: list[float],
         tol: float = 2,
+        separator: str = '|',
         header_included: bool = True,
     ) -> pd.DataFrame:
         """Parse the table cell by cell, defined by lines separating the columns and rows
@@ -69,6 +71,7 @@ class BaseParser:
         :param tol: tolerance for text and cell positioning. In principle, all texts should fall
                     inside the cell's bounding box. Default is 2 pixels, i.e. if text is within 2px
                     of the cell's boundary, it is considered to be inside the cell. See #33
+        :param separator: string to separate fields if we have multiple text cells inside a cell.
         :param header_included: whether the first row is header/col. names. Default is True
         """
         cells = []
@@ -97,6 +100,11 @@ class BaseParser:
                     if len(cell) > 1:
                         if len(cell) == 2 and cell[0][4].strip() == "Andrea Kimi":  # noqa: PLR2004
                             text = cell[0][4].strip() + " " + cell[1][4].strip()
+                        else:
+                            for c in cell[:-1]:
+                                text += c[4].strip().replace('\n', separator) + separator
+                            text += cell[-1][4].strip().replace('\n', separator)
+                                
                     elif len(cell) == 1:
                         cell = cell[0]
                         if cell[4].strip():
@@ -3031,3 +3039,230 @@ class PitStopParser(BaseParser):
         df.to_json = to_json
         df.to_pkl = to_pkl
         return df
+
+class ChampionshipParser(BaseParser):
+    def __init__(
+        self, file: str | os.PathLike, year: int, round_no: int, session: RaceSessionT
+    ):
+        self.file = file
+        self.year = year
+        self.round_no = round_no
+        self.session = session
+        self._check_session()
+        self.driver_championship_df = self._parse_driver_championship()
+        self.constructor_championship_df = self._parse_constructor_championship()
+
+    def _check_session(self) -> None:
+        if self.session not in get_args(RaceSessionT):
+            raise ValueError(
+                f"Invalid session: {self.session}. "
+                f"Valid sessions are {get_args(RaceSessionT)}"
+            )
+        return
+
+    def _parse_driver_championship(self):
+        doc = pymupdf.open(self.file)
+        found = []
+
+        for i in range(len(doc)):
+            page = Page(doc[i])
+            curr = page.search_for('DRIVER')
+
+            if len(curr) > 0:
+                found.append(page)
+
+        if len(found) == 0:
+            doc.close()
+            raise ValueError(f'Driver table not found on any page in '
+                             f'{self.file}')
+
+        columns = []
+        for e in found[0].get_text().split('\n'):
+            if e.startswith('1'):
+                break
+
+            columns.append(e)
+
+        # Page width. This is the rightmost x-coord. of the table
+        w = page.bound()[2]
+
+        # Topmost y-coord. of the table
+        y = found[0].search_for('DRIVER')[0].y0
+
+        # Bottommost y-coord. of the table, identified by "Page".
+        bottom = found[0].search_for('Page')
+
+        if not bottom:
+            raise ValueError(f'Could not find "Page" in '
+                             f'{self.file}')
+        b = bottom[0].y0
+
+        # Table bounding box
+        bbox = pymupdf.Rect(0, y, w, b)
+
+        tables = []
+
+        for page in found:
+            # Columns pos
+            pos = []
+            duplicates_index = {}
+            for i in range(len(columns)):
+                col = columns[i]
+
+                if col not in duplicates_index:
+                    duplicates_index[col] = -1
+                else:
+                    duplicates_index[col] += 1
+
+                index = duplicates_index[col] + 1
+                
+                pos.append({
+                    'left': page.search_for(col, clip=bbox)[index].x0,
+                    'right': page.search_for(col, clip=bbox)[index].x1
+                })
+
+            # Vertical lines separating the columns
+            vlines = []
+
+            for i in range(len(columns)):
+                if i == 0:
+                    left = pos[i]['left']
+                elif i == 1:
+                    left = pos[i]['left']
+                elif i == len(columns) - 1:
+                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+                else:
+                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+
+                vlines.append(left)
+            
+
+            # Horizontal lines separating the rows
+            drivers = page.get_text('blocks', clip=(pos[0]['left'], y, pos[0]['right'], b))
+
+            if re.search("[A-Z]\\. [A-Z]+", drivers[-1][4]) is None:
+                drivers = drivers[:-1]
+            
+            hlines = [y]
+            for i in range(len(drivers) - 1):
+                if i == 0:
+                    hlines.append(drivers[i][3])
+                else:
+                    hlines.append((drivers[i][3] + drivers[i + 1][1]) / 2)
+            line_height = hlines[-1] - hlines[-2]
+            hlines.append(hlines[-1] + line_height)
+
+            # Parse the table using the grid above
+            df = self._parse_table_by_grid(
+                file=self.file,
+                page=page,
+                vlines=vlines,
+                hlines=hlines,
+                header_included=True
+            )
+
+            tables.append(df)
+
+        return pd.concat(tables, ignore_index = True)
+
+    def _parse_constructor_championship(self):
+        doc = pymupdf.open(self.file)
+        found = []
+
+        for i in range(len(doc)):
+            page = Page(doc[i])
+            curr = page.search_for('ENTRANT')
+
+            if len(curr) > 0:
+                found.append(page)
+
+        if len(found) == 0:
+            doc.close()
+            raise ValueError(f'Entrant table not found on any page in '
+                             f'{self.file}')
+
+        columns = []
+        for e in found[0].get_text().split('\n'):
+            if e.startswith('1'):
+                break
+
+            columns.append(e)
+
+        # Page width. This is the rightmost x-coord. of the table
+        h = page.bound()[3]
+        w = page.bound()[2]
+
+        # Topmost y-coord. of the table
+        y = found[0].search_for('ENTRANT')[0].y0
+
+        # Bottommost y-coord. of the table, identified by "Page".
+        b = h
+
+        # Table bounding box
+        bbox = pymupdf.Rect(0, y, w, b)
+
+        tables = []
+
+        for page in found:
+            # Columns pos
+            pos = []
+            duplicates_index = {}
+            for i in range(len(columns)):
+                col = columns[i]
+
+                if col not in duplicates_index:
+                    duplicates_index[col] = -1
+                else:
+                    duplicates_index[col] += 1
+
+                index = duplicates_index[col] + 1
+                
+                pos.append({
+                    'left': page.search_for(col, clip=bbox)[index].x0,
+                    'right': page.search_for(col, clip=bbox)[index].x1
+                })
+
+            # Vertical lines separating the columns
+            vlines = []
+
+            for i in range(len(columns)):
+                if i == 0:
+                    left = pos[i]['left']
+                elif i == 1:
+                    left = pos[i]['left']
+                elif i == len(columns) - 1:
+                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+                else:
+                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+
+                vlines.append(left)
+            
+
+            # Horizontal lines separating the rows
+            total = page.get_text('blocks', clip=(pos[1]['left'], y, pos[1]['right'], b))
+
+            if re.search("[1-9]+", total[-1][4]) is None:
+                total = total[:-1]
+            
+            hlines = [y]
+            for i in range(len(total) - 1):
+                if i == 0:
+                    hlines.append(total[i][3])
+                else:
+                    hlines.append((total[i][3] + total[i + 1][1]) / 2)
+            line_height = hlines[-1] - hlines[-2]
+            hlines.append(hlines[-1] + line_height)
+
+            # Parse the table using the grid above
+            df = self._parse_table_by_grid(
+                file=self.file,
+                page=page,
+                vlines=vlines,
+                hlines=hlines,
+                header_included=True
+            )
+
+            tables.append(df)
+
+        return pd.concat(tables, ignore_index = True)
+
