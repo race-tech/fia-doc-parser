@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from token import COLON
 import os
 import pickle
 import re
@@ -58,7 +57,7 @@ class BaseParser:
         vlines: list[float],
         hlines: list[float],
         tol: float = 2,
-        separator: str = '|',
+        separator: dict[int, str] | None = None,
         header_included: bool = True,
     ) -> pd.DataFrame:
         """Parse the table cell by cell, defined by lines separating the columns and rows
@@ -101,9 +100,13 @@ class BaseParser:
                         if len(cell) == 2 and cell[0][4].strip() == "Andrea Kimi":  # noqa: PLR2004
                             text = cell[0][4].strip() + " " + cell[1][4].strip()
                         else:
+                            sep = " "
+                            if separator is not None:
+                                sep = separator.get(j, " ")
+                            
                             for c in cell[:-1]:
-                                text += c[4].strip().replace('\n', separator) + separator
-                            text += cell[-1][4].strip().replace('\n', separator)
+                                text += c[4].strip().replace('\n', sep) + sep
+                            text += cell[-1][4].strip().replace('\n', sep)
                                 
                     elif len(cell) == 1:
                         cell = cell[0]
@@ -3152,12 +3155,15 @@ class ChampionshipParser(BaseParser):
             line_height = hlines[-1] - hlines[-2]
             hlines.append(hlines[-1] + line_height)
 
+            separator = dict([(i, "|") for i in range(2, len(columns))])
+
             # Parse the table using the grid above
             df = self._parse_table_by_grid(
                 file=self.file,
                 page=page,
                 vlines=vlines,
                 hlines=hlines,
+                separator = separator,
                 header_included=True
             )
 
@@ -3253,12 +3259,15 @@ class ChampionshipParser(BaseParser):
             line_height = hlines[-1] - hlines[-2]
             hlines.append(hlines[-1] + line_height)
 
+            separator = dict([(i, "|") for i in range(2, len(columns))])
+
             # Parse the table using the grid above
             df = self._parse_table_by_grid(
                 file=self.file,
                 page=page,
                 vlines=vlines,
                 hlines=hlines,
+                separator=separator,
                 header_included=True
             )
 
