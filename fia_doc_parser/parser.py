@@ -3169,7 +3169,15 @@ class ChampionshipParser(BaseParser):
 
             tables.append(df)
 
-        return pd.concat(tables, ignore_index = True)
+        df = pd.concat(tables, ignore_index = True)
+        df = df.rename(
+            columns={
+                "DRIVER": "driver",
+                "TOTAL": "total"
+            }    
+        )
+
+        return df
 
     def _parse_constructor_championship(self):
         doc = pymupdf.open(self.file)
@@ -3273,5 +3281,13 @@ class ChampionshipParser(BaseParser):
 
             tables.append(df)
 
-        return pd.concat(tables, ignore_index = True)
+        df = pd.concat(tables, ignore_index = True)
+        df = df.rename(
+            columns={
+                "ENTRANT": "team",
+                "TOTAL": "total"
+            }    
+        )
+
+        return df
 
