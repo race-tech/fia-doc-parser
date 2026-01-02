@@ -3166,6 +3166,7 @@ class ChampionshipParser(BaseParser):
                 separator = separator,
                 header_included=True
             )
+            df.columns.to_numpy()[0] = 'position'
 
             tables.append(df)
 
@@ -3278,6 +3279,7 @@ class ChampionshipParser(BaseParser):
                 separator=separator,
                 header_included=True
             )
+            df.columns.to_numpy()[0] = 'position'
 
             tables.append(df)
 
