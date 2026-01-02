@@ -3176,6 +3176,7 @@ class ChampionshipParser(BaseParser):
                 "TOTAL": "total"
             }    
         )
+        df['position'] = df.index + 1
 
         return df
 
@@ -3288,6 +3289,7 @@ class ChampionshipParser(BaseParser):
                 "TOTAL": "total"
             }    
         )
+        df['position'] = df.index + 1
 
         return df
 
