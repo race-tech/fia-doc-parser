@@ -103,11 +103,11 @@ class BaseParser:
                             sep = " "
                             if separator is not None:
                                 sep = separator.get(j, " ")
-                            
+
                             for c in cell[:-1]:
-                                text += c[4].strip().replace('\n', sep) + sep
-                            text += cell[-1][4].strip().replace('\n', sep)
-                                
+                                text += c[4].strip().replace("\n", sep) + sep
+                            text += cell[-1][4].strip().replace("\n", sep)
+
                     elif len(cell) == 1:
                         cell = cell[0]
                         if cell[4].strip():
@@ -3043,6 +3043,7 @@ class PitStopParser(BaseParser):
         df.to_pkl = to_pkl
         return df
 
+
 class ChampionshipParser(BaseParser):
     def __init__(
         self, file: str | os.PathLike, year: int, round_no: int, session: RaceSessionT
@@ -3069,19 +3070,18 @@ class ChampionshipParser(BaseParser):
 
         for i in range(len(doc)):
             page = Page(doc[i])
-            curr = page.search_for('DRIVER')
+            curr = page.search_for("DRIVER")
 
             if len(curr) > 0:
                 found.append(page)
 
         if len(found) == 0:
             doc.close()
-            raise ValueError(f'Driver table not found on any page in '
-                             f'{self.file}')
+            raise ValueError(f"Driver table not found on any page in {self.file}")
 
         columns = []
-        for e in found[0].get_text().split('\n'):
-            if e.startswith('1'):
+        for e in found[0].get_text().split("\n"):
+            if e.startswith("1"):
                 break
 
             columns.append(e)
@@ -3090,14 +3090,13 @@ class ChampionshipParser(BaseParser):
         w = page.bound()[2]
 
         # Topmost y-coord. of the table
-        y = found[0].search_for('DRIVER')[0].y0
+        y = found[0].search_for("DRIVER")[0].y0
 
         # Bottommost y-coord. of the table, identified by "Page".
-        bottom = found[0].search_for('Page')
+        bottom = found[0].search_for("Page")
 
         if not bottom:
-            raise ValueError(f'Could not find "Page" in '
-                             f'{self.file}')
+            raise ValueError(f'Could not find "Page" in {self.file}')
         b = bottom[0].y0
 
         # Table bounding box
@@ -3118,34 +3117,37 @@ class ChampionshipParser(BaseParser):
                     duplicates_index[col] += 1
 
                 index = duplicates_index[col] + 1
-                
-                pos.append({
-                    'left': page.search_for(col, clip=bbox)[index].x0,
-                    'right': page.search_for(col, clip=bbox)[index].x1
-                })
+
+                pos.append(
+                    {
+                        "left": page.search_for(col, clip=bbox)[index].x0,
+                        "right": page.search_for(col, clip=bbox)[index].x1,
+                    }
+                )
 
             # Vertical lines separating the columns
             vlines = []
 
             for i in range(len(columns)):
                 if i == 0:
-                    left = pos[i]['left']
+                    left = pos[i]["left"]
                 elif i == 1:
-                    left = pos[i]['left']
+                    left = pos[i]["left"]
                 elif i == len(columns) - 1:
-                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+                    left = (pos[i]["left"] + pos[i - 1]["right"]) / 2
                 else:
-                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+                    left = (pos[i]["left"] + pos[i - 1]["right"]) / 2
 
                 vlines.append(left)
-            
 
             # Horizontal lines separating the rows
-            drivers = page.get_text('blocks', clip=(pos[0]['left'], y, pos[0]['right'], b))
+            drivers = page.get_text(
+                "blocks", clip=(pos[0]["left"], y, pos[0]["right"], b)
+            )
 
             if re.search("[A-Z]\\. [A-Z]+", drivers[-1][4]) is None:
                 drivers = drivers[:-1]
-            
+
             hlines = [y]
             for i in range(len(drivers) - 1):
                 if i == 0:
@@ -3163,20 +3165,15 @@ class ChampionshipParser(BaseParser):
                 page=page,
                 vlines=vlines,
                 hlines=hlines,
-                separator = separator,
-                header_included=True
+                separator=separator,
+                header_included=True,
             )
 
             tables.append(df)
 
-        df = pd.concat(tables, ignore_index = True)
-        df = df.rename(
-            columns={
-                "DRIVER": "driver",
-                "TOTAL": "total"
-            }    
-        )
-        df['position'] = df.index + 1
+        df = pd.concat(tables, ignore_index=True)
+        df = df.rename(columns={"DRIVER": "driver", "TOTAL": "total"})
+        df["position"] = df.index + 1
 
         return df
 
@@ -3186,19 +3183,18 @@ class ChampionshipParser(BaseParser):
 
         for i in range(len(doc)):
             page = Page(doc[i])
-            curr = page.search_for('ENTRANT')
+            curr = page.search_for("ENTRANT")
 
             if len(curr) > 0:
                 found.append(page)
 
         if len(found) == 0:
             doc.close()
-            raise ValueError(f'Entrant table not found on any page in '
-                             f'{self.file}')
+            raise ValueError(f"Entrant table not found on any page in {self.file}")
 
         columns = []
-        for e in found[0].get_text().split('\n'):
-            if e.startswith('1'):
+        for e in found[0].get_text().split("\n"):
+            if e.startswith("1"):
                 break
 
             columns.append(e)
@@ -3208,7 +3204,7 @@ class ChampionshipParser(BaseParser):
         w = page.bound()[2]
 
         # Topmost y-coord. of the table
-        y = found[0].search_for('ENTRANT')[0].y0
+        y = found[0].search_for("ENTRANT")[0].y0
 
         # Bottommost y-coord. of the table, identified by "Page".
         b = h
@@ -3231,34 +3227,37 @@ class ChampionshipParser(BaseParser):
                     duplicates_index[col] += 1
 
                 index = duplicates_index[col] + 1
-                
-                pos.append({
-                    'left': page.search_for(col, clip=bbox)[index].x0,
-                    'right': page.search_for(col, clip=bbox)[index].x1
-                })
+
+                pos.append(
+                    {
+                        "left": page.search_for(col, clip=bbox)[index].x0,
+                        "right": page.search_for(col, clip=bbox)[index].x1,
+                    }
+                )
 
             # Vertical lines separating the columns
             vlines = []
 
             for i in range(len(columns)):
                 if i == 0:
-                    left = pos[i]['left']
+                    left = pos[i]["left"]
                 elif i == 1:
-                    left = pos[i]['left']
+                    left = pos[i]["left"]
                 elif i == len(columns) - 1:
-                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+                    left = (pos[i]["left"] + pos[i - 1]["right"]) / 2
                 else:
-                    left = (pos[i]['left'] + pos[i - 1]['right']) / 2
+                    left = (pos[i]["left"] + pos[i - 1]["right"]) / 2
 
                 vlines.append(left)
-            
 
             # Horizontal lines separating the rows
-            total = page.get_text('blocks', clip=(pos[1]['left'], y, pos[1]['right'], b))
+            total = page.get_text(
+                "blocks", clip=(pos[1]["left"], y, pos[1]["right"], b)
+            )
 
             if re.search("[1-9]+", total[-1][4]) is None:
                 total = total[:-1]
-            
+
             hlines = [y]
             for i in range(len(total) - 1):
                 if i == 0:
@@ -3277,19 +3276,13 @@ class ChampionshipParser(BaseParser):
                 vlines=vlines,
                 hlines=hlines,
                 separator=separator,
-                header_included=True
+                header_included=True,
             )
 
             tables.append(df)
 
-        df = pd.concat(tables, ignore_index = True)
-        df = df.rename(
-            columns={
-                "ENTRANT": "team",
-                "TOTAL": "total"
-            }    
-        )
-        df['position'] = df.index + 1
+        df = pd.concat(tables, ignore_index=True)
+        df = df.rename(columns={"ENTRANT": "team", "TOTAL": "total"})
+        df["position"] = df.index + 1
 
         return df
-
